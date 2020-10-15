@@ -1,0 +1,49 @@
+const express = require("express"); // import
+const cors = require("cors"); // import cors
+const monk = require("monk");
+const timeAgo = require("node-time-ago");
+const app = express(); // creating an express app
+const nodemailer = require('nodemailer');
+const bodyParser = require('body-parser');
+
+
+app.use(bodyParser.urlencoded({extended: true}))
+
+app.use(express.json()); //enable server to read json data coming in post requests
+app.use(cors()); // enabling cors to allow requests to come inside the server
+
+const db = monk("localhost/humandb"); // db to connect
+const dbfeatures = db.get("features"); // from db get me the collection (table) called 'features'
+
+//...................................
+
+
+
+
+
+let server = app.listen(8081, function(){
+    let port = server.address().port;
+    console.log("Server started at http://localhost:%s", port);
+});
+
+
+app.get("/features", async function(req, res) {
+  var allFeaturesInDb = await dbfeatures.find();
+  allFeaturesInDb.every(f => (f.time = timeAgo(f.time)));
+  res.send(allFeaturesInDb);
+});
+
+app.post("/features", async function(req, res) {
+  var newFeatureToAdd = {
+    body: req.body.feature,
+    author: req.body.name,
+    age: req.body.age,
+    time: Date.now()
+  };
+  await dbfeatures.insert(newFeatureToAdd);
+  res.send("Successful");
+});
+
+app.listen(4000, function()  {
+  console.log("Application is running on Port 4000");
+});
